@@ -1,3 +1,5 @@
+import grammar, converter
+
 class Parser(object):
     def __init__(self, source):
         if isinstance(source, list):
@@ -8,4 +10,5 @@ class Parser(object):
     def parse(self):
         # invoke the parser generator
         # convert the result tree to bach_ast
-        pass
+        parsed = grammar.BachGrammar.parse(self.source)
+        return converter.Converter().convert(parsed)
