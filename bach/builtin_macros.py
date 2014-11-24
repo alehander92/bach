@@ -1,15 +1,16 @@
 from bach_macro import register_macro
+import bach_ast
 
 __all__ = ['BUILTIN_MACROS']
 
 def if_macro(test, if_true, if_false=None):
-    return If(test, if_true, if_false)
+    return bach_ast.If(test, if_true, if_false)
 
 def lambda_macro(args, *body):
-    return Lambda(args, body)
+    return bach_ast.Lambda(args, body)
 
 def define_macro(label, value):
-    return Define(label, value)
+    return bach_ast.Define(label, value)
 
 def dict_macro(*elements):
     keys, values = []
@@ -18,7 +19,7 @@ def dict_macro(*elements):
             keys.append(element)
         else:
             values.append(element)
-    return Dict(keys, values)
+    return bach_ast.Dict(keys, values)
 
 BUILTIN_MACROS = {}
 register_macro(BUILTIN_MACROS, 'if', if_macro, (2, 3))

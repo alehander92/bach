@@ -24,7 +24,14 @@ class Generator(object):
         elif isinstance(node, list):            
             return self.generate_list(node)
         else:
-            return getattr(self, 'generate_%s' % type(node).__name__.lower())(*node.__dict__.values())
+            return getattr(self, 'generate_%s' % type(node).__name__.lower())(**node.__dict__)
+
+    def generate_define(self, label, value):
+        print(label, value)
+        compiled_value = self.generate(value)
+        return Opcodes(
+            compiled_value,
+            (STORE_GLOBAL, label.label))
 
     def generate_label(self, python_label):
         return Opcodes((LOAD_GLOBAL, python_label))

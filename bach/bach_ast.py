@@ -94,6 +94,21 @@ class Cond(Node):
             '\n'.join(['%s(%s %s)' % ('  ' * (depth + 1), self.tests[i].as_code(), self.results[i].as_code()) for i in range(len(self.tests))]),
             '%s%s' % ('  ' * (depth + 1), self.results[-1].as_code()))
 
+class If(Node):
+    def __init__(self, test, if_true, if_false):
+        self.test, self.if_true, self.if_false = test, if_false, if_false
+
+    def as_code(self, depth=0):
+        return '(if %s %s %s)' % (self.test.as_code(), self.if_true.as_code(), self.if_false.as_code())
+
+class Define(Node):
+    def __init__(self, label, value):
+        self.label, self.value = label, value
+
+    def as_code(self, depth=0):
+        return '(define %s %s)' % (self.label.as_code(), self.value.as_code())
+
+
 class Quote(Node):
     def __init__(self, expr):
         self.expr = expr
