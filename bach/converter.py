@@ -1,3 +1,5 @@
+import bach_ast
+
 class Converter(object):
     def convert(self, sexp):
         return self.convert_p(sexp.children)
@@ -18,7 +20,9 @@ class Converter(object):
 
     def convert_label(self, label):
         return bach_ast.Label(label.text)
-        # print(label)
+
+    def convert_many(self, label):
+        return bach_ast.Many(label.text)
 
     def convert_sexp(self, sexp):
         return [self.convert_child(c.children[0].children[0]) for c in sexp.children[1].children]
@@ -26,14 +30,26 @@ class Converter(object):
     def convert_quote(self, expr):
         return bach_ast.Quote(self.convert_child(expr.children[1].children[0]))
 
+    def convert_quasiquote(self, expr):
+        return bach_ast.Quasiquote(self.convert_child(expr.children[1].children[0]))
+
+    def convert_unquote(self, expr):
+        return bach_ast.Unquote(self.convert_child(expr.children[1].children[0]))
+
+    def convert_quotelist(self, expr):
+        return  bach_ast.QuoteList(self.convert_child(expr.children[1].children[0]))
+
     def convert_number(self, number):
         return self.convert_child(number.children[0])
+
+    def convert_float(self, f):
+        return bach_ast.Float(float(f.text))
 
     def convert_integer(self, integer):
         return bach_ast.Integer(int(integer.text))
 
-    def convert_float(self, f):
-        return bach_ast.Float(float(f.text))
+    def convert_string(self, value):
+        return bach_ast.String(value.text[1:-1])
 
     def convert_operator(self, operator):
         return bach_ast.Label(operator.text)

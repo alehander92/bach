@@ -1,4 +1,0 @@
-#!/usr/bin/env python
-
-print('bach <filename>.bach')
-

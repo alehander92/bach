@@ -6,13 +6,32 @@ class Label(Node):
         self.label = label
 
     def as_python_label(self):
+        if self.label in self.OPERATOR_PYTHON_LABELS:
+            return self.OPERATOR_PYTHON_LABELS[self.label]
+
         converted = self.label.replace('-', '_')
         if converted.endswith('?'):
             converted = 'is_%s' % converted[:-1]
+
         return converted
     
     def as_code(self):
         return self.label
+    
+    OPERATOR_PYTHON_LABELS = {
+        '+' : 'bach_add',
+        '-' : 'bach_sub',
+        '*' : 'bach_mult',
+        '/' : 'bach_div',
+        '>' : 'bach_gt',
+        '<' : 'bach_lt',
+        '=' : 'bach_eq',
+        '>=' : 'bach_gte',
+        '!=' : 'bach_ne',
+        '<=' : 'bach_lte',
+        'and' : 'bach_and',
+    }
+    
 
 class Number(Node):
     def __init__(self, value):
@@ -76,11 +95,33 @@ class Cond(Node):
             '%s%s' % ('  ' * (depth + 1), self.results[-1].as_code()))
 
 class Quote(Node):
-    def __init__(self, ast):
-        self.ast = ast
+    def __init__(self, expr):
+        self.expr = expr
 
     def as_code(self, depth=0):
-        return '%s\'%s' % ('  ' * depth, self.ast.as_code())
+        return '%s\'%s' % ('  ' * depth, self.expr.as_code())
+
+class Quasiquote(Node):
+    def __init__(self, expr):
+        self.expr = expr
+
+    def as_code(self, depth=0):
+        return '%s`%s' % ('  ' * depth, self.expr.as_code())
+
+class Unquote(Node):
+    def __init__(self, expr):
+        self.expr = expr
+
+    def as_code(self, depth=0):
+        return '%s ~%s' % ('  ' * depth, self.expr.as_code())
+
+class UnquoteList(Node):
+    def __init__(self, expr):
+        self.expr = expr
+
+    def as_code(self, depth=0):
+        return '%s ~@%s' % ('  ' * depth, self.expr.as_code())
+
 
 class Program(Node):
     def __init__(self, code):

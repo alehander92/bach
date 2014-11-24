@@ -14,7 +14,7 @@ class MacroExpander(object):
        return bach_ast.Program(map(self.macro_expand_node, node.code))
 
     def macro_expand_node(self, node):
-        if isinstance(node, list) and len(node) > 0 and isinstance(node[0], Label) and node[0].label in self.macros:
+        if isinstance(node, list) and len(node) > 0 and isinstance(node[0], bach_ast.Label) and node[0].label in self.macros:
             macro = self.find_macro(node[0].label, len(node) - 1)
             if isinstance(macro, types.FunctionType):
                 return macro(*map(self.macro_expand_node, node[1:]))

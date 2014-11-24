@@ -1,49 +1,73 @@
 from fractions import Fraction
 
-def car(list):
-    return list[0]
+def symbol():
+    class BachSymbol(object):
+        def __init__(self, value):
+            self.value = value
 
-def cdr(list):
-    return list[1:]
+        def __repr__(self):
+            return "'%s" % self.value
 
-def cons(head, tail):
-    return [head] + tail
+        def __str__(self):
+            return repr(self)
 
-def bach_add(*values):
-    return sum(values)
+    def car(list):
+        return list[0]
 
-def bach_sub(*values):
-    if len(values) == 0:
-        raise BachArgumentError("expected 1 or more got 0 args for -")
-    elif len(values) == 1:
-        return -values[0]
-    else:
-        value = values[0]
-        for n in values[1:]:
-            value -= n
+    def cdr(list):
+        return list[1:]
+
+    def cons(head, tail):
+        return [head] + tail
+
+    def bach_add(*values):
+        return sum(values)
+
+    def bach_sub(*values):
+        if len(values) == 0:
+            raise BachArgumentError("expected 1 or more got 0 args for -")
+        elif len(values) == 1:
+            return -values[0]
+        else:
+            value = values[0]
+            for n in values[1:]:
+                value -= n
+            return value
+
+    def display(value):
+        print(value)
+
+    def string(*values):
+        result = ''
+        for value in values:
+            result += value
+        return result
+
+    def bach_mult(*values):
+        value = 1
+        for n in values:
+            value *= n
         return value
 
-def bach_mult(*values):
-    value = 1
-    for n in values:
-        value *= n
-    return value
-
-def bach_div(*values):
-    if len(values) == 0:
-        raise BachArgumentError("expected 1 or more got 0 args for /")
-    elif len(values) == 1:
-        if isinstance(values[0], (int, Fraction)):
-            return Fraction(1, values[0])
-        else:
-            return 1 / values[0]
-    else:
-        value = values[0]
-        for d in values[1:]:
-            if isinstance(value, (int, Fraction)) and isinstance(d, (int, Fraction)):
-                return Fraction(value, d)
+    def bach_div(*values):
+        if len(values) == 0:
+            raise BachArgumentError("expected 1 or more got 0 args for /")
+        elif len(values) == 1:
+            if isinstance(values[0], (int, Fraction)):
+                return Fraction(1, values[0])
             else:
-                return value / d
+                return 1 / values[0]
+        else:
+            value = values[0]
+            for d in values[1:]:
+                if isinstance(value, (int, Fraction)) and isinstance(d, (int, Fraction)):
+                    return Fraction(value, d)
+                else:
+                    return value / d
+
+
+__all__ = ['car', 'cdr', 'cons', 'bach_add', 'bach_sub', 'bach_mult', 'bach_div', 'display', 'symbol']
+
 
 
 # e? -> is_e
