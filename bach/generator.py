@@ -116,7 +116,7 @@ class Generator(object):
         if isinstance(expr, bach_ast.Label):
             return self.generate_symbol(expr.label)
         elif isinstance(expr, list):
-            return self.generate_quoted_list(expr.values)
+            return self.generate_quoted_list(expr)
         else:
             return self.generate(expr)
 
