@@ -47,17 +47,54 @@ class Generator(object):
         return Opcodes((load, python_label))
 
     def generate_bytecode_label(self):
-        return byteplay.Label()
+        return Label()
 
-    def generate_if(self, test_node, true_node, false_node):
-        test, if_true, if_false = map(self.generate, [test_node, true_node, false_node])
+    def generate_if(self, test, if_true, if_false):
+        def e():
+            if True:
+                display(4)
+                es(2)
+            return
+
+        print Code.from_code(e.func_code).code[2]
+        print Code.from_code(e.func_code).code
+        compiled_test, compiled_true = map(self.generate, [test, if_true])
         l = self.generate_bytecode_label()
+        forward = self.generate_bytecode_label()
+        if if_false:
+            compiled_false = self.generate(if_false)
+        else:
+            compiled_false = Opcodes((LOAD_CONST, None))
+
+        # if can't return a value in python on bytecode level
+        # a branch of if can't leave stuff on the stack
+        # maybe it's a byteplay issue but python itself clean the stack in each branch too
+        # we need to add effect - 1 POP_TOP and one STORE_FAST bach_reserved_if_result_name
+        # so we can put it on the stack after if
+        # effect is the number of stuff on the stack
+        # HACK
+
+        effect_true, effect_false = self.stack_effect(compiled_true.to_list()), self.stack_effect(compiled_false.to_list())
+
+        if effect_true > 0:
+            compiled_true = Opcodes(
+                compiled_true,
+                (STORE_FAST, '_bach_reserved_if'),
+                [(POP_TOP, None)] * (effect_true - 1))
+        if effect_false > 0:
+            compiled_false = Opcodes(
+                compiled_false, 
+                (STORE_FAST, '_bach_reserved_if'),
+                [(POP_TOP, None)] * (effect_false - 1))
         return Opcodes(
-            test,
-            (b.POP_JUMP_IF_FALSE, l),
-            true,
-            l,
-            false)
+            compiled_test,
+            (POP_JUMP_IF_FALSE, l),
+            compiled_true,
+            (JUMP_FORWARD, forward),
+            (l, None),
+            compiled_false,
+            (forward, None),
+            (LOAD_FAST, '_bach_reserved_if'))
 
     def generate_do(self, body):
         compiled_body = map(self.generate, body)
@@ -66,7 +103,7 @@ class Generator(object):
     def generate_value(self, value):
         return Opcodes((LOAD_CONST, value))
 
-    generate_integer = generate_float = generate_string = generate_value
+    generate_integer = generate_float = generate_string = generate_boolean = generate_value
 
     def generate_symbol(self, value):
         return Opcodes([
@@ -175,9 +212,9 @@ class Generator(object):
         compiled_body.code = CodeList(compiled_body.code)
         compiled_body.args = tuple(args)
         compiled_body.freevars = tuple(var for var, load in outers.items() if load == LOAD_DEREF)
-        # print('COMPILE')
-        # print(compiled_body.code)
-        # print(compiled_body.__dict__)
+        print('COMPILE')
+        print(compiled_body.code)
+        print(compiled_body.__dict__)
         return compiled_body
 
     def generate_quote(self, expr):
@@ -247,3 +284,31 @@ class Generator(object):
 
     def in_quote(self):
         return self.quote_depth > 0
+
+    def stack_effect(self, sexp):
+        effect = 0
+        effect_levels = {
+            -2 : [STORE_MAP],
+            -1 : [STORE_FAST, STORE_NAME, STORE_GLOBAL, BINARY_ADD, BINARY_SUBTRACT, BINARY_MULTIPLY, BINARY_DIVIDE],
+            0 : [MAKE_FUNCTION, MAKE_CLOSURE],
+            1 : [LOAD_CONST, LOAD_FAST, LOAD_NAME, LOAD_DEREF, LOAD_GLOBAL, BUILD_MAP]
+        }
+        effects = {}
+        for level, opcodes in effect_levels.items():
+            for opcode in opcodes:
+                effects[opcode] = level
+
+        variable_effects = {
+            BUILD_LIST : lambda a: 1 - a,
+            CALL_FUNCTION : lambda a: -a
+        }
+
+        for opcode, value in sexp:
+            if opcode in effects:
+                effect += effects[opcode]
+            elif opcode in variable_effects:
+                effect += variable_effects[opcode](value)
+        
+        return effect
+
+

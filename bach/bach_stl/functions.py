@@ -1,5 +1,14 @@
 from fractions import Fraction
 
+'''
+Some builtin functions for bach's runtime
+bach_add/bach_sub etc correspond to +/-...
+see bach_ast for mapping(bach converts all those labels into valid python labels)
+Most of those implementations don't feel pythonic, and that's intentional
+Those functions would be used frequently, so we 
+try to write them more efficiently without too much magic
+'''
+
 def symbol():
     class BachSymbol(object):
         def __init__(self, value):
@@ -42,6 +51,44 @@ def symbol():
         for value in values:
             result += value
         return result
+
+    def bach_eq(*values):
+        if len(values) == 0:
+            raise BachArgumentError("expected 1 or more got 0 args for =")
+        first = values[0]
+        for value in values[1:]:
+            if value != first:
+                return False
+        return True
+
+    def bach_neq(*values):
+        if len(values) == 0:
+            raise BachArgumentError("expected 1 or more got 0 args for !=")
+        first = values[0]
+        for value in values[1:]:
+            if value != first:
+                return True
+        return False
+
+    def bach_gt(*values):
+        if len(values) == 0:
+            raise BachArgumentError("expected 1 or more got 0 args for >")
+        current = values[0]
+        for value in values[1:]:
+            if current <= value:
+                return False
+            current = value
+        return True
+
+    def bach_lt(*values):
+        if len(values) == 0:
+            raise BachArgumentError("expected 1 or more got 0 args for =")
+        current = values[0]
+        for value in values[1:]:
+            if current >= value:
+                return False
+            current = value
+        return True
 
     def bach_mult(*values):
         value = 1

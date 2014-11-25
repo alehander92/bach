@@ -131,7 +131,7 @@ class Cond(Node):
 
 class If(Node):
     def __init__(self, test, if_true, if_false):
-        self.test, self.if_true, self.if_false = test, if_false, if_false
+        self.test, self.if_true, self.if_false = test, if_true, if_false
 
     def as_code(self, depth=0):
         return '(if %s %s %s)' % (self.test.as_code(), self.if_true.as_code(), self.if_false.as_code())
