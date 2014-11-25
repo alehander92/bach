@@ -1,0 +1,9 @@
+(function empty? (collection)
+    (= 0 (len collection)))
+
+; (function filter (pred collection)
+;     (if (empty? collection)
+;         '()
+;         (if (pred (car collection))
+;             (cons (car collection) (filter (cdr collection)))
+;             (filter (cdr collection)))))

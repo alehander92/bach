@@ -9,6 +9,8 @@ import bach.parser, bach.macro_expander, bach.builtin_macros, bach.compiler
 import bach.bach_stl.functions
 from bach.bach_stl import load_stl
 
+BACH_STL_BASE = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "bach", "bach_stl")
+BACH_FILES = ['macros', 'collections']
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
@@ -18,10 +20,17 @@ if __name__ == '__main__':
         with open(filename, 'r') as f:
             source = f.read()
 
+        bach_source = ""
+        for b in BACH_FILES:
+            with open(os.path.join(BACH_STL_BASE, b + '.bach'), 'r') as f:
+                bach_source += f.read() + '\n'
+
+        source = bach_source + '\n' + source
+
         sexp = bach.parser.Parser(source).parse()
         # print(sexp.code[1][1][0])
         expanded = bach.macro_expander.MacroExpander(bach.builtin_macros.BUILTIN_MACROS, bach.builtin_macros.USER_DEFINED_MACROS).macro_expand(sexp)
-        
+                
         stl = load_stl() # a code obj with the stl functions
         bach.compiler.Compiler().compile_and_save(expanded, '%spyc' % filename[:-4], stl=stl)
         
