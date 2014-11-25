@@ -1,0 +1,6 @@
+(define a 2)
+(define add-to 
+    (fn (e)
+        (fn (z) (+ a z))))
+(display ((add-to 4) 2))
+

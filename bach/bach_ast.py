@@ -3,13 +3,13 @@ class Node(object):
 
 class Label(Node):
     def __init__(self, label):
-        self.label = label
+        self.label = self.as_python_label(label)
 
-    def as_python_label(self):
-        if self.label in self.OPERATOR_PYTHON_LABELS:
-            return self.OPERATOR_PYTHON_LABELS[self.label]
+    def as_python_label(self, label):
+        if label in self.OPERATOR_PYTHON_LABELS:
+            return self.OPERATOR_PYTHON_LABELS[label]
 
-        converted = self.label.replace('-', '_')
+        converted = label.replace('-', '_')
         if converted.endswith('?'):
             converted = 'is_%s' % converted[:-1]
 
@@ -143,6 +143,29 @@ class Define(Node):
     def as_code(self, depth=0):
         return '(define %s %s)' % (self.label.as_code(), self.value.as_code())
 
+
+class Lambda(Node):
+    def __init__(self, args, body):
+        self.args, self.body = args, body
+
+    def as_code(self, depth=0):
+        return '%s(lambda (%s) %s)' % ('  ' * depth, ' '.join([arg.as_code() for arg in self.args]), ' '.join([v.as_code() for v in self.body]))
+
+    def find_outer_labels(self):
+        return set(self._find_outer_labels(self.body))
+
+    def _find_outer_labels(self, sexp):
+        if isinstance(sexp, (list, tuple)):
+            return reduce(lambda l, r: l + r, map(self._find_outer_labels, sexp), [])
+        elif isinstance(sexp, Label):
+            if sexp.label not in [arg.label for arg in self.args]:
+                return [sexp.label]
+            else:
+                return []
+        elif isinstance(sexp, Node):
+            return reduce(lambda l, r: l + r, map(self._find_outer_labels, sexp.__dict__.values()))
+        else:
+            return []
 
 class Quote(Node):
     def __init__(self, expr):

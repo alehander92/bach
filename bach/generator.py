@@ -16,6 +16,8 @@ class Generator(object):
             data.code = []
         self.quote_depth = 0
         self.quasiquote_depth = 0
+        self.closures = []
+        self.outers = []
         opcodes = Opcodes(map(self.generate, sexp.code)).to_list()
         data.code += opcodes + [(LOAD_CONST, None), (RETURN_VALUE, None)]
         # print(data.code)
@@ -23,7 +25,9 @@ class Generator(object):
 
     def generate(self, node):
         if isinstance(node, bach_ast.Label):
-            return self.generate_label(node.as_python_label())
+            return self.generate_label(node.label)
+        elif isinstance(node, bach_ast.Lambda):
+            return self.generate_lambda(node.body, node.args, node)
         elif isinstance(node, list):            
             return self.generate_list(node)
         else:
@@ -36,7 +40,13 @@ class Generator(object):
             (STORE_GLOBAL, label.label))
 
     def generate_label(self, python_label):
-        return Opcodes((LOAD_GLOBAL, python_label))
+        if len(self.outers) == 0:
+            load = LOAD_GLOBAL
+        elif python_label in self.closures[-1]:
+            load = LOAD_FAST
+        else:
+            load = self.outers[-1][python_label]
+        return Opcodes((load, python_label))
 
     def generate_bytecode_label(self):
         return byteplay.Label()
@@ -54,7 +64,6 @@ class Generator(object):
     def generate_do(self, body):
         compiled_body = map(self.generate, body)
         return Opcodes(compiled_body)
-
     def generate_value(self, value):
         return Opcodes((LOAD_CONST, value))
 
@@ -113,6 +122,52 @@ class Generator(object):
             (LOAD_CONST, None),
             (IMPORT_NAME, module_name.label),
             (STORE_GLOBAL, module_name.label))
+
+    def generate_lambda(self, body, args, node):
+        self.closures.append({arg.label for arg in args})
+        self.outers.append({})
+        outer_labels = node.find_outer_labels()
+        is_python_closure = False
+        fast = set([])
+        for label in outer_labels:
+            for closure in self.closures:
+                if label in closure:
+                    self.outers[-1][label] = LOAD_DEREF
+                    fast.add(label)
+                    is_python_closure = True
+                    break
+            else:
+                self.outers[-1][label] = LOAD_GLOBAL
+        
+        compiled_body = self.compile_function(self.closures[-1], self.outers[-1], map(self.generate, body))
+        self.closures.pop()
+        self.outers.pop()
+
+        if is_python_closure:
+            fast = [(LOAD_CLOSURE, f) for f in fast]
+            return Opcodes(
+                fast,
+                (BUILD_TUPLE, len(fast)),
+                (LOAD_CONST, compiled_body),
+                (MAKE_CLOSURE, 0))
+        else:
+            return Opcodes(
+                (LOAD_CONST, compiled_body),
+                (MAKE_FUNCTION, 0))
+
+    def compile_function(self, args, outers, body):
+        compiled_body = Code.from_code((lambda: None).func_code)
+        compiled_body.code = Opcodes(body).to_list()
+        if len(compiled_body.code) == 0:
+            compiled_body.code += [(LOAD_CONST, None)]
+        compiled_body.code += [(RETURN_VALUE, None)]
+        compiled_body.code = CodeList(compiled_body.code)
+        compiled_body.args = tuple(args)
+        compiled_body.freevars = tuple(var for var, load in outers.items() if load == LOAD_DEREF)
+        # print('COMPILE')
+        # print(compiled_body.code)
+        # print(compiled_body.__dict__)
+        return compiled_body
 
     def generate_quote(self, expr):
         self.quote_depth += 1
