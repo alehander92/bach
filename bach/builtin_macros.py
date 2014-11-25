@@ -13,7 +13,7 @@ def define_macro(label, value):
     return bach_ast.Define(label, value)
 
 def dict_macro(*elements):
-    keys, values = []
+    keys = values = []
     for i, element in enumerate(elements):
         if i % 2 == 0:
             keys.append(element)

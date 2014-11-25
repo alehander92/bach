@@ -71,6 +71,13 @@ class Function(Node):
             ', '.join([arg.as_code() for arg in self.args]),
             '\n'.join([child.as_code(depth + 1) for child in self.body]))
 
+class Dict(Node):
+    def __init__(self, keys, values):
+        self.keys, self.values = keys, values
+
+    def as_code(self, depth=0):
+        return '%s{%s}' % ('  ' * depth, ' '.join(['%s : %s' % map(pair, lambda a: a.as_code()) for pair in zip(self.keys, self.values)]))
+
 class List(Node):
     def __init__(self, values):
         self.values = values

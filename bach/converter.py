@@ -27,6 +27,13 @@ class Converter(object):
     def convert_sexp(self, sexp):
         return [self.convert_child(c.children[0].children[0]) for c in sexp.children[1].children]
     
+    def convert_dict(self, dict):
+        children = [(c.children[0].children[0].children[0], c.children[0].children[4].children[0]) for c in dict.children[1:-1]]
+        elements = []
+        for child in children:
+            elements += map(self.convert_child, child)
+        return [bach_ast.Label('dict')] + elements
+
     def convert_quote(self, expr):
         return bach_ast.Quote(self.convert_child(expr.children[1].children[0]))
 
@@ -44,7 +51,7 @@ class Converter(object):
 
     def convert_float(self, f):
         return bach_ast.Float(float(f.text))
-
+  
     def convert_integer(self, integer):
         return bach_ast.Integer(int(integer.text))
 
