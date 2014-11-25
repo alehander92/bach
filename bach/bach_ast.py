@@ -71,6 +71,13 @@ class Function(Node):
             ', '.join([arg.as_code() for arg in self.args]),
             '\n'.join([child.as_code(depth + 1) for child in self.body]))
 
+class Do(Node):
+    def __init__(self, body):
+        self.body = body
+
+    def as_code(self, depth=0):
+        return '%s(do %s)' % ('  ' * depth, ' '.join([child.as_code() for child in self.body]))
+
 class Import(Node):
     def __init__(self, modules):
         self.modules = modules

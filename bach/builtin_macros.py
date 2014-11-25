@@ -27,10 +27,14 @@ def set_macro(*elements):
 def import_macro(*files):
     return bach_ast.Import(files)
 
+def do_macro(*body):
+    return bach_ast.Do(body)
+
 BUILTIN_MACROS = {}
 register_macro(BUILTIN_MACROS, 'if', if_macro, (2, 3))
 register_macro(BUILTIN_MACROS, 'lambda', lambda_macro, (1,))
 register_macro(BUILTIN_MACROS, 'define', define_macro, 2)
 register_macro(BUILTIN_MACROS, 'dict', dict_macro, (0,))
 register_macro(BUILTIN_MACROS, 'set', set_macro, (0,))
-register_macro(BUILTIN_MACROS,  'import', import_macro, (1,))
+register_macro(BUILTIN_MACROS, 'import', import_macro, (1,))
+register_macro(BUILTIN_MACROS, 'do', do_macro, (0,))

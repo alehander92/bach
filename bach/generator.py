@@ -49,6 +49,10 @@ class Generator(object):
             l,
             false)
 
+    def generate_do(self, body):
+        compiled_body = map(self.generate, body)
+        return Opcodes(compiled_body)
+
     def generate_value(self, value):
         return Opcodes((LOAD_CONST, value))
 
@@ -107,9 +111,6 @@ class Generator(object):
             (LOAD_CONST, None),
             (IMPORT_NAME, module_name.label),
             (STORE_GLOBAL, module_name.label))
-
-    def generate_do(self, elements):
-        return Opcodes(map(self.generate, elements))
 
     def generate_quote(self, expr):
         if isinstance(expr, bach_ast.Label):
