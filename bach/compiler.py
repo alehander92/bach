@@ -25,7 +25,7 @@ class Compiler(object):
     def compile_timestamp(self):
         return marshal.dumps(int(time.time()))[1:]
 
-    def compile_and_eval(self, sexp, stl=None):
+    def compile_and_eval(self, sexp, stl=None, return_value=False):
         g = generator.Generator()
-        code = g.generate_module(sexp, stl=stl)
-        return eval(code.to_code())
+        code = g.generate_module(sexp, stl, return_value)
+        return eval(code)

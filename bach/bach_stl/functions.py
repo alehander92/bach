@@ -112,6 +112,7 @@ def symbol():
                 else:
                     return value / d
 
+    return BachSymbol
 
 __all__ = ['car', 'cdr', 'cons', 'bach_add', 'bach_sub', 'bach_mult', 'bach_div', 'display', 'symbol']
 

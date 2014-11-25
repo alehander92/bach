@@ -1,22 +1,2 @@
-(macro cond [test if-true if-false]
-  `(if ~test ~if-true ~if-false))
-
-(macro cond [test if-true other-test &rest]
-    (let (rest (cons other-test rest))
-      `(if ~test ~if-true (cond ~@rest))))
-
-(cond 
-  (> w 2) 2
-  (= w 2) 0
-          'w)
-
-(if (> w 2) 2 (cond (= w 2) 0 'w))
-
-(if (> w 2) 2 (if (= w 2) 0 'w))
-
-(macro unless [test unless-true unless-false]
-  `(if (not ~test) ~unless-true ~unless-false))
-
-(macro define [label args &body]
-  `(define ~label (lambda ~args ~@body)))
-
+(macro function (label args &body)
+    `(define ~label (fn ~args ~body)))

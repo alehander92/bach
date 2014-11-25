@@ -22,7 +22,7 @@ class Converter(object):
         return bach_ast.Label(label.text)
 
     def convert_many(self, label):
-        return bach_ast.Many(label.text)
+        return bach_ast.Many(label.text[1:])
 
     def convert_sexp(self, sexp):
         return [self.convert_child(c.children[0].children[0]) for c in sexp.children[1].children]

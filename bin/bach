@@ -4,24 +4,11 @@ import sys
 import os
 import types
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-import byteplay
 import bach
 import bach.parser, bach.macro_expander, bach.builtin_macros, bach.compiler
 import bach.bach_stl.functions
+from bach.bach_stl import load_stl
 
-
-def load_stl():
-    codes = []
-    opcode = None
-    opcode = byteplay.Code.from_code(bach.bach_stl.functions.symbol.func_code)
-    new_code = []
-    for value in opcode.code:
-        if value[0] == byteplay.STORE_FAST:
-            new_code.append((byteplay.STORE_GLOBAL, value[1]))
-        elif value[0] != byteplay.SetLineno:
-            new_code.append(value)
-    opcode.code = byteplay.CodeList(new_code[:-2])
-    return opcode
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
@@ -33,9 +20,8 @@ if __name__ == '__main__':
 
         sexp = bach.parser.Parser(source).parse()
         # print(sexp.code[1][1][0])
-        expanded = bach.macro_expander.MacroExpander(bach.builtin_macros.BUILTIN_MACROS).macro_expand(sexp)
-        # print(expanded.code[])
-
+        expanded = bach.macro_expander.MacroExpander(bach.builtin_macros.BUILTIN_MACROS, bach.builtin_macros.USER_DEFINED_MACROS).macro_expand(sexp)
+        
         stl = load_stl() # a code obj with the stl functions
         bach.compiler.Compiler().compile_and_save(expanded, '%spyc' % filename[:-4], stl=stl)
         

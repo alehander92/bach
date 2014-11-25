@@ -18,6 +18,9 @@ class Label(Node):
     def as_code(self):
         return self.label
     
+    def __repr__(self):
+        return 'Label(%s)' % self.label
+
     OPERATOR_PYTHON_LABELS = {
         '+' : 'bach_add',
         '-' : 'bach_sub',
@@ -33,12 +36,19 @@ class Label(Node):
     }
     
 
+class Many(Node):
+    def __init__(self, label):
+        self.label = label
+
 class Number(Node):
     def __init__(self, value):
         self.value = value
 
     def as_code(self):
         return str(self.value)
+
+    def __repr__(self):
+        return '%s(%s)' % (type(self).__name__, str(self.value))
 
 class Float(Number):
     pass

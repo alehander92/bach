@@ -1,10 +1,16 @@
-from bach_macro import register_macro
+from bach_macro import register_macro, BachMacro
 import bach_ast
 
 __all__ = ['BUILTIN_MACROS']
 
+USER_DEFINED_MACROS = {}
+
 def if_macro(test, if_true, if_false=None):
     return bach_ast.If(test, if_true, if_false)
+
+def macro_macro(label, args, *body):
+    arg = BachMacro(label, args, body)
+    register_macro(USER_DEFINED_MACROS, label.label, arg)
 
 def lambda_macro(args, *body):
     return bach_ast.Lambda(args, body)
@@ -13,12 +19,8 @@ def define_macro(label, value):
     return bach_ast.Define(label, value)
 
 def dict_macro(*elements):
-    print(elements)
-    print
     keys = elements[::2]
     values = elements[1::2]
-    print(keys)
-    print(values)
     return bach_ast.Dict(keys, values)
 
 def set_macro(*elements):
@@ -40,6 +42,7 @@ def do_macro(*body):
 
 BUILTIN_MACROS = {}
 register_macro(BUILTIN_MACROS, 'if', if_macro, (2, 3))
+register_macro(BUILTIN_MACROS, 'macro', macro_macro, (3,))
 register_macro(BUILTIN_MACROS, 'fn', lambda_macro, (1,))
 register_macro(BUILTIN_MACROS, 'define', define_macro, 2)
 register_macro(BUILTIN_MACROS, 'dict', dict_macro, (0,))

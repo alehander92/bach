@@ -8,7 +8,7 @@ def z(): 2
 class Generator(object):
     BACH_SYMBOL = 'BachSymbol'
 
-    def generate_module(self, sexp, stl=None):
+    def generate_module(self, sexp, stl=None, return_value=False):
         data = Code.from_code(z.func_code) #Code([], [], [], False, False, False, '<>', '<>', 1, 'a bach file')
         if stl:
             data.code = stl.code
@@ -19,14 +19,17 @@ class Generator(object):
         self.closures = []
         self.outers = []
         opcodes = Opcodes(map(self.generate, sexp.code)).to_list()
-        data.code += opcodes + [(LOAD_CONST, None), (RETURN_VALUE, None)]
+        data.code += opcodes
+        if not return_value:
+            data.code.append((LOAD_CONST, None))
+        data.code.append((RETURN_VALUE, None))
         # print(data.code)
         return data.to_code()
 
     def generate(self, node):
         if isinstance(node, bach_ast.Label):
             return self.generate_label(node.label)
-        elif isinstance(node, list):            
+        elif isinstance(node, list):
             return self.generate_list(node)
         else:
             return getattr(self, 'generate_%s' % type(node).__name__.lower())(**node.__dict__)
@@ -50,14 +53,6 @@ class Generator(object):
         return Label()
 
     def generate_if(self, test, if_true, if_false):
-        def e():
-            if True:
-                display(4)
-                es(2)
-            return
-
-        print Code.from_code(e.func_code).code[2]
-        print Code.from_code(e.func_code).code
         compiled_test, compiled_true = map(self.generate, [test, if_true])
         l = self.generate_bytecode_label()
         forward = self.generate_bytecode_label()
@@ -125,13 +120,17 @@ class Generator(object):
             z,
             (CALL_FUNCTION, len(z)))
 
+
     def generate_vector(self, values):
         compiled_values = map(self.generate, values)
         return Opcodes(compiled_values, (BUILD_LIST, len(values)))
 
     def generate_list(self, values):
-        handler, args = values[0], values[1:]
-        return self.generate_call(handler, args)
+        if self.in_quasiquote():
+            return self.generate_quasiquote_list(values)
+        else:
+            handler, args = values[0], values[1:]
+            return self.generate_call(handler, args)
 
     def generate_dict(self, keys, values):
         z = map(
@@ -167,8 +166,8 @@ class Generator(object):
 
     def generate_lambda(self, body, args, let_aliases=None):
         let_fast = set(let_aliases.keys()) if let_aliases else set([])
-        arg_labels = {arg.label for arg in args}
-        self.closures.append(arg_labels | let_fast)
+        arg_labels = [arg.label for arg in args]
+        self.closures.append(set(arg_labels) | let_fast)
         self.outers.append({})
         outer_labels = bach_ast.find_outer_labels(body, self.closures[-1])
         is_python_closure = False
@@ -187,6 +186,7 @@ class Generator(object):
             let_bytecode = [Opcodes(self.generate(value), (STORE_FAST, a)) for a, value in let_aliases.items()]
         else:
             let_bytecode = []
+        # arg_labels should be a list, python sets are not ordered, and order matters for lambda code object args member
         compiled_body = self.compile_function(arg_labels, self.outers[-1], Opcodes(let_bytecode, map(self.generate, body)))
         self.closures.pop()
         self.outers.pop()
@@ -212,9 +212,9 @@ class Generator(object):
         compiled_body.code = CodeList(compiled_body.code)
         compiled_body.args = tuple(args)
         compiled_body.freevars = tuple(var for var, load in outers.items() if load == LOAD_DEREF)
-        print('COMPILE')
-        print(compiled_body.code)
-        print(compiled_body.__dict__)
+        # print('COMPILE')
+        # print(compiled_body.code)
+        # print(compiled_body.__dict__)
         return compiled_body
 
     def generate_quote(self, expr):
@@ -232,8 +232,6 @@ class Generator(object):
         self.quasiquote_depth += 1
         if isinstance(expr, bach_ast.Label):
             value = self.generate_symbol(expr.label)
-        elif isinstance(expr, list):
-            value = self.generate_quasiquote_list(expr)
         else:
             value = self.generate(expr)
         self.quasiquote_depth -= 1
@@ -253,11 +251,14 @@ class Generator(object):
                     y = False
                 else:
                     z.append((BINARY_ADD, None)) # add to last list
-                z.append(self.generate(value.expr))
+                z.append(self.generate_unquote(value))
                 z.append((BINARY_ADD, None))
                 counter = 0
+            elif isinstance(value, list):
+                z.append(self.generate_quasiquote_list(value))
+                counter += 1
             else:
-                z.append(self.generate(value))
+                z.append(self.generate_quote(value))
                 counter += 1
 
         if counter > 0:
@@ -279,6 +280,18 @@ class Generator(object):
         else:
             raise UnquoteError("Attempting to call unquote outside of quasiquote/quote")
 
+    def generate_unquotelist(self, expr):
+        if self.in_quasiquote():
+            return self.generate(expr)
+        elif self.in_quote():
+            compiled_expr = self.generate_quote(expr)
+            return Opcodes(
+                (LOAD_CONST, 'unquote'),
+                compiled_expr,
+                (BUILD_LIST, 6-4))
+        else:
+            raise UnquoteError("Attempting to call unquote list outside of quasiquote/quote")
+            
     def in_quasiquote(self):
         return self.quasiquote_depth > 0
 
