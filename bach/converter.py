@@ -27,6 +27,9 @@ class Converter(object):
     def convert_sexp(self, sexp):
         return [self.convert_child(c.children[0].children[0]) for c in sexp.children[1].children]
     
+    def convert_vector(self, sexp):
+        return [bach_ast.Label('vector')] + [self.convert_child(c.children[0].children[0]) for c in sexp.children[2].children]
+
     def convert_dict(self, dict):
         children = [(c.children[0].children[0].children[0], c.children[0].children[4].children[0]) for c in dict.children[1:-1]]
         elements = []

@@ -15,7 +15,7 @@ class Generator(object):
             data.code = []
         opcodes = Opcodes(map(self.generate, sexp.code)).to_list()
         data.code += opcodes + [(LOAD_CONST, None), (RETURN_VALUE, None)]
-        print(data.code)
+        # print(data.code)
         return data.to_code()
 
     def generate(self, node):
@@ -27,7 +27,6 @@ class Generator(object):
             return getattr(self, 'generate_%s' % type(node).__name__.lower())(**node.__dict__)
 
     def generate_define(self, label, value):
-        print(label, value)
         compiled_value = self.generate(value)
         return Opcodes(
             compiled_value,
@@ -62,10 +61,10 @@ class Generator(object):
         return Opcodes([
             (LOAD_GLOBAL, self.BACH_SYMBOL),
             (LOAD_CONST,  value),
-            (CALL_FUNCTION, None)])
+            (CALL_FUNCTION, 1)])
 
     def generate_quoted_list(self, values):
-        v = map(self.generate, values)
+        v = map(self.generate_quote, values)
         return Opcodes(
             v,
             (BUILD_LIST, len(values)))
@@ -77,6 +76,10 @@ class Generator(object):
             h,
             z,
             (CALL_FUNCTION, len(z)))
+
+    def generate_vector(self, values):
+        compiled_values = map(self.generate, values)
+        return Opcodes(compiled_values, (BUILD_LIST, len(values)))
 
     def generate_list(self, values):
         '''

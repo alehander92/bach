@@ -78,6 +78,13 @@ class Do(Node):
     def as_code(self, depth=0):
         return '%s(do %s)' % ('  ' * depth, ' '.join([child.as_code() for child in self.body]))
 
+class Vector(Node):
+    def __init__(self, values):
+        self.values = values
+
+    def as_code(self, depth=0):
+        return '%s#(%s)' % ('  ' * depth, ' '.join([w.as_code() for w in self.values]))
+
 class Import(Node):
     def __init__(self, modules):
         self.modules = modules

@@ -20,6 +20,8 @@ class MacroExpander(object):
                 return macro(*map(self.macro_expand_node, node[1:]))
             elif isinstance(macro, BachMacro):
                 return macro.render(*map(self.macro_expand_node, node[1:]))
+        elif isinstance(node, list):
+            return map(self.macro_expand_node, node)
         else:
             return node
     

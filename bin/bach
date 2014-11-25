@@ -32,7 +32,9 @@ if __name__ == '__main__':
             source = f.read()
 
         sexp = bach.parser.Parser(source).parse()
+        # print(sexp.code[1][1][0])
         expanded = bach.macro_expander.MacroExpander(bach.builtin_macros.BUILTIN_MACROS).macro_expand(sexp)
+        # print(expanded.code[])
 
         stl = load_stl() # a code obj with the stl functions
         bach.compiler.Compiler().compile_and_save(expanded, '%spyc' % filename[:-4], stl=stl)
