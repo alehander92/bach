@@ -31,7 +31,7 @@ class Converter(object):
         return [bach_ast.Label('vector')] + [self.convert_child(c.children[0].children[0]) for c in sexp.children[2].children]
 
     def convert_dict(self, dict):
-        children = [(c.children[0].children[0].children[0], c.children[0].children[4].children[0]) for c in dict.children[1:-1]]
+        children = [(c.children[0].children[0], c.children[4].children[0]) for c in dict.children[1]]
         elements = []
         for child in children:
             elements += map(self.convert_child, child)

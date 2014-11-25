@@ -13,12 +13,12 @@ def define_macro(label, value):
     return bach_ast.Define(label, value)
 
 def dict_macro(*elements):
-    keys = values = []
-    for i, element in enumerate(elements):
-        if i % 2 == 0:
-            keys.append(element)
-        else:
-            values.append(element)
+    print(elements)
+    print
+    keys = elements[::2]
+    values = elements[1::2]
+    print(keys)
+    print(values)
     return bach_ast.Dict(keys, values)
 
 def set_macro(*elements):
@@ -26,6 +26,10 @@ def set_macro(*elements):
 
 def import_macro(*files):
     return bach_ast.Import(files)
+
+def let_macro(values, *body):
+    aliases = dict(zip([value.label for value in values[::2]], values[1::2]))
+    return bach_ast.Let(aliases, body)
 
 def vector_macro(*values):
     return bach_ast.Vector(values)
@@ -41,5 +45,6 @@ register_macro(BUILTIN_MACROS, 'define', define_macro, 2)
 register_macro(BUILTIN_MACROS, 'dict', dict_macro, (0,))
 register_macro(BUILTIN_MACROS, 'set', set_macro, (0,))
 register_macro(BUILTIN_MACROS, 'import', import_macro, (1,))
+register_macro(BUILTIN_MACROS, 'let', let_macro, (1,))
 register_macro(BUILTIN_MACROS, 'vector', vector_macro, (0,))
 register_macro(BUILTIN_MACROS, 'do', do_macro, (0,))

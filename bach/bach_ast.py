@@ -144,28 +144,21 @@ class Define(Node):
         return '(define %s %s)' % (self.label.as_code(), self.value.as_code())
 
 
+class Let(Node):
+    '''
+    Represents (let (label value..) body..)
+    We can implement let as a macro with nested lambdas, but we prefer to compile them to more efficient bytecode
+    '''
+    def __init__(self, aliases, body):
+        self.aliases, self.body = aliases, body
+
+
 class Lambda(Node):
     def __init__(self, args, body):
         self.args, self.body = args, body
 
     def as_code(self, depth=0):
         return '%s(lambda (%s) %s)' % ('  ' * depth, ' '.join([arg.as_code() for arg in self.args]), ' '.join([v.as_code() for v in self.body]))
-
-    def find_outer_labels(self):
-        return set(self._find_outer_labels(self.body))
-
-    def _find_outer_labels(self, sexp):
-        if isinstance(sexp, (list, tuple)):
-            return reduce(lambda l, r: l + r, map(self._find_outer_labels, sexp), [])
-        elif isinstance(sexp, Label):
-            if sexp.label not in [arg.label for arg in self.args]:
-                return [sexp.label]
-            else:
-                return []
-        elif isinstance(sexp, Node):
-            return reduce(lambda l, r: l + r, map(self._find_outer_labels, sexp.__dict__.values()))
-        else:
-            return []
 
 class Quote(Node):
     def __init__(self, expr):
@@ -202,3 +195,17 @@ class Program(Node):
 
     def as_code(self, depth=0):
         return '\n'.join([c.as_code() for c in self.code]) + '\n'
+
+def find_outer_labels(sexp, fast):
+    if isinstance(sexp, (list, tuple)):
+        return reduce(lambda l, r: l | r, [find_outer_labels(s, fast) for s in sexp], set([]))
+    elif isinstance(sexp, Label):
+        if sexp.label not in fast:
+            return {sexp.label}
+        else:
+            return set([])
+    elif isinstance(sexp, Node):
+        return reduce(lambda l, r: l | r, [find_outer_labels(s, fast) for s in sexp.__dict__.values()], set([]))
+    else:
+        return set([])
+

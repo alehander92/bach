@@ -26,8 +26,6 @@ class Generator(object):
     def generate(self, node):
         if isinstance(node, bach_ast.Label):
             return self.generate_label(node.label)
-        elif isinstance(node, bach_ast.Lambda):
-            return self.generate_lambda(node.body, node.args, node)
         elif isinstance(node, list):            
             return self.generate_list(node)
         else:
@@ -64,6 +62,7 @@ class Generator(object):
     def generate_do(self, body):
         compiled_body = map(self.generate, body)
         return Opcodes(compiled_body)
+
     def generate_value(self, value):
         return Opcodes((LOAD_CONST, value))
 
@@ -100,7 +99,7 @@ class Generator(object):
     def generate_dict(self, keys, values):
         z = map(
             lambda pair: Opcodes(map(self.generate, pair), (STORE_MAP, None)),
-            zip(keys, values))
+            zip(values, keys))
 
         return Opcodes(
             (BUILD_MAP, len(z)),
@@ -123,14 +122,22 @@ class Generator(object):
             (IMPORT_NAME, module_name.label),
             (STORE_GLOBAL, module_name.label))
 
-    def generate_lambda(self, body, args, node):
-        self.closures.append({arg.label for arg in args})
+    def generate_let(self, aliases, body):
+        compiled_lambda = self.generate_lambda(body, [], aliases)
+        return Opcodes(
+            compiled_lambda,
+            (CALL_FUNCTION, 0))
+
+    def generate_lambda(self, body, args, let_aliases=None):
+        let_fast = set(let_aliases.keys()) if let_aliases else set([])
+        arg_labels = {arg.label for arg in args}
+        self.closures.append(arg_labels | let_fast)
         self.outers.append({})
-        outer_labels = node.find_outer_labels()
+        outer_labels = bach_ast.find_outer_labels(body, self.closures[-1])
         is_python_closure = False
         fast = set([])
         for label in outer_labels:
-            for closure in self.closures:
+            for closure in self.closures[:-1]:
                 if label in closure:
                     self.outers[-1][label] = LOAD_DEREF
                     fast.add(label)
@@ -139,7 +146,11 @@ class Generator(object):
             else:
                 self.outers[-1][label] = LOAD_GLOBAL
         
-        compiled_body = self.compile_function(self.closures[-1], self.outers[-1], map(self.generate, body))
+        if let_aliases:
+            let_bytecode = [Opcodes(self.generate(value), (STORE_FAST, a)) for a, value in let_aliases.items()]
+        else:
+            let_bytecode = []
+        compiled_body = self.compile_function(arg_labels, self.outers[-1], Opcodes(let_bytecode, map(self.generate, body)))
         self.closures.pop()
         self.outers.pop()
 
@@ -157,7 +168,7 @@ class Generator(object):
 
     def compile_function(self, args, outers, body):
         compiled_body = Code.from_code((lambda: None).func_code)
-        compiled_body.code = Opcodes(body).to_list()
+        compiled_body.code = body.to_list()
         if len(compiled_body.code) == 0:
             compiled_body.code += [(LOAD_CONST, None)]
         compiled_body.code += [(RETURN_VALUE, None)]
