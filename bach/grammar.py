@@ -3,7 +3,7 @@ import bach_ast
 
 BachGrammar = Grammar('''
 p = (expr ws?)*
-expr = number / boolean / string / label / many / macro / sexp / quote / quasiquote / unquote / quotelist / dict / vector
+expr = number / boolean / string / label / many / macro / sexp / quote / quasiquote / unquote / unquotelist / dict / vector
 number = float / integer
 float = ~"[0-9]+"i "." ~"[0-9]+"i
 integer = ~"[0-9]+"i
@@ -20,7 +20,7 @@ dict = "{" (expr ws? ":" ws? expr ws?)* "}"
 quote = "'" expr
 quasiquote = "`" expr
 unquote = "~" expr
-quotelist = "~@" expr
+unquotelist = "~@" expr
 macro = lp "macro" lp label* many? rp expr rp
 lp = "("
 rp = ")"

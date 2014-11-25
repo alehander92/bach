@@ -6,3 +6,6 @@ class MacroMatchError(BachError):
 
 class BachArgumentError(BachError):
 	pass
+
+class UnquoteError(BachError):
+	pass

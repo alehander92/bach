@@ -1,6 +1,7 @@
 from byteplay import *
 from opcodes import Opcodes
 import bach_ast
+from errors import UnquoteError
 
 def z(): 2
 
@@ -13,6 +14,8 @@ class Generator(object):
             data.code = stl.code
         else:
             data.code = []
+        self.quote_depth = 0
+        self.quasiquote_depth = 0
         opcodes = Opcodes(map(self.generate, sexp.code)).to_list()
         data.code += opcodes + [(LOAD_CONST, None), (RETURN_VALUE, None)]
         # print(data.code)
@@ -82,10 +85,6 @@ class Generator(object):
         return Opcodes(compiled_values, (BUILD_LIST, len(values)))
 
     def generate_list(self, values):
-        '''
-        if an unquoted list is given, it's assumed
-        it's a call : (handler &args)
-        '''
         handler, args = values[0], values[1:]
         return self.generate_call(handler, args)
 
@@ -116,20 +115,26 @@ class Generator(object):
             (STORE_GLOBAL, module_name.label))
 
     def generate_quote(self, expr):
+        self.quote_depth += 1
         if isinstance(expr, bach_ast.Label):
-            return self.generate_symbol(expr.label)
+            value = self.generate_symbol(expr.label)
         elif isinstance(expr, list):
-            return self.generate_quoted_list(expr)
+            value = self.generate_quoted_list(expr)
         else:
-            return self.generate(expr)
+            value = self.generate(expr)
+        self.quote_depth -= 1
+        return value
 
     def generate_quasiquote(self, expr):
+        self.quasiquote_depth += 1
         if isinstance(expr, bach_ast.Label):
-            return self.generate_symbol(expr.label)
+            value = self.generate_symbol(expr.label)
         elif isinstance(expr, list):
-            return self.generate_quasiquote_list(expr.values)
+            value = self.generate_quasiquote_list(expr)
         else:
-            return self.generate(expr)
+            value = self.generate(expr)
+        self.quasiquote_depth -= 1
+        return value
 
     def generate_quasiquote_list(self, values):
         z = []
@@ -137,7 +142,7 @@ class Generator(object):
         y = True
         for value in values:
             if isinstance(value, bach_ast.Unquote):
-                z.append(self.generate(value.expr))
+                z.append(self.generate_unquote(value))
                 counter += 1
             elif isinstance(value, bach_ast.UnquoteList):
                 z.append((BUILD_LIST, counter))
@@ -150,6 +155,7 @@ class Generator(object):
                 counter = 0
             else:
                 z.append(self.generate(value))
+                counter += 1
 
         if counter > 0:
             z.append((BUILD_LIST, counter))
@@ -157,3 +163,21 @@ class Generator(object):
                 z.append((BINARY_ADD, None))
 
         return Opcodes(z)
+
+    def generate_unquote(self, expr):
+        if self.in_quasiquote():
+            return self.generate(expr)
+        elif self.in_quote():
+            compiled_expr = self.generate_quote(expr)
+            return Opcodes(
+                (LOAD_CONST, 'unquote'),
+                compiled_expr,
+                (BUILD_LIST, 2))
+        else:
+            raise UnquoteError("Attempting to call unquote outside of quasiquote/quote")
+
+    def in_quasiquote(self):
+        return self.quasiquote_depth > 0
+
+    def in_quote(self):
+        return self.quote_depth > 0

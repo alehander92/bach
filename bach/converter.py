@@ -46,8 +46,8 @@ class Converter(object):
     def convert_unquote(self, expr):
         return bach_ast.Unquote(self.convert_child(expr.children[1].children[0]))
 
-    def convert_quotelist(self, expr):
-        return  bach_ast.QuoteList(self.convert_child(expr.children[1].children[0]))
+    def convert_unquotelist(self, expr):
+        return  bach_ast.UnquoteList(self.convert_child(expr.children[1].children[0]))
 
     def convert_number(self, number):
         return self.convert_child(number.children[0])
