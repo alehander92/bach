@@ -3,7 +3,7 @@
 import sys
 import os
 import types
-sys.path.append(os.path.dirname('.'))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import byteplay
 import bach
 import bach.parser, bach.macro_expander, bach.builtin_macros, bach.compiler
