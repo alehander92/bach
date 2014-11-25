@@ -1,5 +1,8 @@
+import os
 import byteplay
 import functions
+
+CURRENT_FILE_DIR = '.'
 
 def load_stl():
     codes = []
@@ -13,3 +16,12 @@ def load_stl():
             new_code.append(value)
     opcode.code = byteplay.CodeList(new_code[:-2])
     return opcode
+
+def include(*filenames):
+    result = []
+    for filename in filenames:
+        with open(os.path.join(CURRENT_FILE_DIR, filename + '.bach'), 'r') as f:
+            result.append(f.read())
+    return '\n'.join(result)
+
+

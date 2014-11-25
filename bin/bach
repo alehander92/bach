@@ -7,7 +7,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import bach
 import bach.parser, bach.macro_expander, bach.builtin_macros, bach.compiler
 import bach.bach_stl.functions
-from bach.bach_stl import load_stl
+import bach.bach_stl
+from bach.bach_stl import load_stl, include
 
 BACH_STL_BASE = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "bach", "bach_stl")
 BACH_FILES = ['macros', 'collections']
@@ -19,12 +20,9 @@ if __name__ == '__main__':
         filename = sys.argv[1]
         with open(filename, 'r') as f:
             source = f.read()
+        bach.bach_stl.CURRENT_FILE_DIR = os.path.dirname(filename)
 
-        bach_source = ""
-        for b in BACH_FILES:
-            with open(os.path.join(BACH_STL_BASE, b + '.bach'), 'r') as f:
-                bach_source += f.read() + '\n'
-
+        bach_source = include(*[os.path.join(BACH_STL_BASE, b) for b in BACH_FILES])
         source = bach_source + '\n' + source
 
         sexp = bach.parser.Parser(source).parse()

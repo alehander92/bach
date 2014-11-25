@@ -1,4 +1,8 @@
 from bach_macro import register_macro, BachMacro
+from bach_stl import include
+import parser
+import macro_expander
+import compiler
 import bach_ast
 
 __all__ = ['BUILTIN_MACROS']
@@ -11,6 +15,12 @@ def if_macro(test, if_true, if_false=None):
 def macro_macro(label, args, *body):
     arg = BachMacro(label, args, body)
     register_macro(USER_DEFINED_MACROS, label.label, arg)
+
+def include_macro(*files):
+    source = include(*[file.value for file in files])
+    sexp = parser.Parser(source).parse()
+    expanded = macro_expander.MacroExpander(BUILTIN_MACROS, USER_DEFINED_MACROS).macro_expand(sexp)
+    return bach_ast.Do(expanded.code)
 
 def lambda_macro(args, *body):
     return bach_ast.Lambda(args, body)
@@ -47,6 +57,7 @@ BUILTIN_MACROS = {}
 register_macro(BUILTIN_MACROS, 'if', if_macro, (2, 3))
 register_macro(BUILTIN_MACROS, 'macro', macro_macro, (3,))
 register_macro(BUILTIN_MACROS, 'fn', lambda_macro, (1,))
+register_macro(BUILTIN_MACROS, 'include', include_macro, (0,))
 register_macro(BUILTIN_MACROS, 'define', define_macro, 2)
 register_macro(BUILTIN_MACROS, 'dict', dict_macro, (0,))
 register_macro(BUILTIN_MACROS, 'set', set_macro, (0,))
