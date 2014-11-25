@@ -97,17 +97,16 @@ class Generator(object):
             v,
             (BUILD_SET, len(values)))
 
-    def generate_import(self, module_names):
-        modules = map(self.generate_python_module, module_names)
-        return Opcodes(modules)
+    def generate_import(self, modules):
+        compiled_modules = map(self.generate_python_module, modules)
+        return Opcodes(compiled_modules)
 
     def generate_python_module(self, module_name):
-        name = self.save_name(module_name)
         return Opcodes(
             (LOAD_CONST, -1),
             (LOAD_CONST, None),
-            (IMPORT_NAME, name),
-            (STORE_NAME, name))
+            (IMPORT_NAME, module_name.label),
+            (STORE_GLOBAL, module_name.label))
 
     def generate_do(self, elements):
         return Opcodes(map(self.generate, elements))

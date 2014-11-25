@@ -71,6 +71,20 @@ class Function(Node):
             ', '.join([arg.as_code() for arg in self.args]),
             '\n'.join([child.as_code(depth + 1) for child in self.body]))
 
+class Import(Node):
+    def __init__(self, modules):
+        self.modules = modules
+
+    def as_code(self, depth=0):
+        return '%s(import %s)' % ('  ' * depth, ' '.join([child.as_code() for child in self.values]))
+
+class Set(Node):
+    def __init__(self, values):
+        self.values = values
+
+    def as_code(self, depth=0):
+        return '%s(set %s)' % ('  ' * depth, ' '.join([child.as_code() for child in self.values]))
+
 class Dict(Node):
     def __init__(self, keys, values):
         self.keys, self.values = keys, values
