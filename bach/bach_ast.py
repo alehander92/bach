@@ -170,6 +170,10 @@ class Lambda(Node):
     def as_code(self, depth=0):
         return '%s(lambda (%s) %s)' % ('  ' * depth, ' '.join([arg.as_code() for arg in self.args]), ' '.join([v.as_code() for v in self.body]))
 
+class Attribute(Node):
+    def __init__(self, elements):
+        self.elements = elements
+
 class Quote(Node):
     def __init__(self, expr):
         self.expr = expr

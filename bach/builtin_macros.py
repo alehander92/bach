@@ -26,6 +26,9 @@ def dict_macro(*elements):
 def set_macro(*elements):
     return bach_ast.Set(elements)
 
+def attribute_macro(*elements):
+    return bach_ast.Attribute(elements)
+
 def import_macro(*files):
     return bach_ast.Import(files)
 
@@ -47,6 +50,7 @@ register_macro(BUILTIN_MACROS, 'fn', lambda_macro, (1,))
 register_macro(BUILTIN_MACROS, 'define', define_macro, 2)
 register_macro(BUILTIN_MACROS, 'dict', dict_macro, (0,))
 register_macro(BUILTIN_MACROS, 'set', set_macro, (0,))
+register_macro(BUILTIN_MACROS, 'attribute', attribute_macro, (2,))
 register_macro(BUILTIN_MACROS, 'import', import_macro, (1,))
 register_macro(BUILTIN_MACROS, 'let', let_macro, (1,))
 register_macro(BUILTIN_MACROS, 'vector', vector_macro, (0,))

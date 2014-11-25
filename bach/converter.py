@@ -24,6 +24,9 @@ class Converter(object):
     def convert_many(self, label):
         return bach_ast.Many(label.text[1:])
 
+    def convert_attr(self, sexp):
+        return [bach_ast.Label('attribute')] + map(bach_ast.Label, [s.children[0].text for s in sexp.children[0].children] + [sexp.children[1].text])
+
     def convert_sexp(self, sexp):
         return [self.convert_child(c.children[0].children[0]) for c in sexp.children[1].children]
     

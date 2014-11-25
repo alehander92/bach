@@ -112,6 +112,12 @@ class Generator(object):
             v,
             (BUILD_LIST, len(values)))
 
+    def generate_attribute(self, elements):
+        compiled_attr = [(LOAD_ATTR, element.label) for element in elements[1:]]
+        return Opcodes(
+            self.generate(elements[0]),
+            compiled_attr)
+
     def generate_call(self, handler, args):
         z = map(self.generate, args)
         h = self.generate(handler)
